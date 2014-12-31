@@ -4,6 +4,7 @@ extern crate libc;
 use self::inotify_sys::wrapper::{mod, INotify, Watch};
 use std::collections::HashMap;
 use std::io::IoErrorKind;
+use std::io::fs::walk_dir;
 use std::sync::{Arc, RWLock};
 use std::thread::Thread;
 use super::{Error, Event, op, Op, Watcher};
@@ -123,6 +124,19 @@ impl Watcher for INotifyWatcher {
         (*self.paths).write().insert(w.clone(), path.clone());
         Ok(())
       }
+    }
+  }
+
+  fn watch_recursive(&mut self, path: &Path) -> Result<(), Error> {
+    match walk_dir(path) {
+      Ok(mut d) => {
+        for ref dir in d {
+          try!(self.watch_recursive(dir));
+          try!(self.watch(dir));
+        }
+        Ok(())
+      },
+      Err(_) => self.watch(path)
     }
   }
 

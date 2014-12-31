@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::io::fs::{mod, PathExtensions};
+use std::io::fs::{mod, PathExtensions, walk_dir};
 use std::sync::{Arc, RWLock};
 use std::thread::Thread;
 use super::{Error, Event, op, Watcher};
@@ -119,6 +119,19 @@ impl Watcher for PollWatcher {
   fn watch(&mut self, path: &Path) -> Result<(), Error> {
     (*self.watches).write().insert(path.clone());
     Ok(())
+  }
+
+  fn watch_recursive(&mut self, path: &Path) -> Result<(), Error> {
+    match walk_dir(path) {
+      Ok(mut d) => {
+        for ref dir in d {
+          try!(self.watch_recursive(dir));
+          try!(self.watch(dir));
+        }
+        Ok(())
+      },
+      Err(_) => self.watch(path)
+    }
   }
 
   fn unwatch(&mut self, path: &Path) -> Result<(), Error> {

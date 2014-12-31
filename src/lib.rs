@@ -41,6 +41,7 @@ pub enum Error {
 pub trait Watcher {
   fn new(Sender<Event>) -> Result<Self, Error>;
   fn watch(&mut self, &Path) -> Result<(), Error>;
+  fn watch_recursive(&mut self, &Path) -> Result<(), Error>;
   fn unwatch(&mut self, &Path) -> Result<(), Error>;
 }
 
